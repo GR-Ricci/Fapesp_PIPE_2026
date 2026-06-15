@@ -5,13 +5,11 @@ from Variables_Counts import *
 from Variables_Counts_Ribeirao_Preto import *
 import numpy as np
 
-#ok
+
 def grafico_areas_subareas(largura_label=25):
-    # Filtra "Não Informado" e pega top N
     top_area = empresas_area[empresas_area.index != "Não Informado"].nlargest(20)
     top_sub = empresas_subarea[empresas_subarea.index != "Não Informado"].nlargest(20)
 
-    # Função para quebrar labels longos
     def divisao_label(labels, largura):
         return [
             '\n'.join(textwrap.wrap(lbl, largura)) if len(str(lbl)) > largura else lbl
@@ -39,7 +37,7 @@ def grafico_areas_subareas(largura_label=25):
 
     plt.tight_layout()
     plt.show()
-#ok
+
 def grafico_grande_area(largura_label=25):
     # Filtra "Não Informado" e ordena do maior para o menor
     total_grande_area = empresas_grande_area[empresas_grande_area.index != "Não Informado"].sort_values(ascending=False)
@@ -65,7 +63,7 @@ def grafico_grande_area(largura_label=25):
     plt.tight_layout()
     plt.show()
 
-#ok
+
 def grafico_pesquisadores():
     valores = [
         total_pesquisadores,
@@ -119,7 +117,7 @@ def grafico_pesquisadores():
 
     plt.tight_layout()
     plt.show()
-#ok
+
 def grafico_pesquisas_e_pesquisadores_vertical():
     # Valores de pesquisadores atualizados
     valores_pesquisadores = [
@@ -169,7 +167,7 @@ def grafico_pesquisas_e_pesquisadores_vertical():
 
     plt.tight_layout()
     plt.show()
-#ok
+
 def grafico_pesquisas_e_pesquisadores_misto():
     # Valores de pesquisadores
     valores_pesquisadores = [
@@ -206,7 +204,7 @@ def grafico_pesquisas_e_pesquisadores_misto():
     plt.tight_layout()
     plt.show()
 
-# OK
+
 def grafico_rp():
     # --- Configurações Iniciais ---
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -271,34 +269,104 @@ def grafico_rp():
     plt.tight_layout()
     plt.show()
 
-#ok
+
 def grafico_empresas():
-    empresas_top15_cidade = empresas_por_cidade.head(15)
+    empresas_por_cidade = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Município'].value_counts().head(15)
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    plt.figure(figsize=(10, 6))
+    df_plot = empresas_por_cidade.to_frame(name="")
+    df_plot.index = ['\n'.join(textwrap.wrap(lbl, 15)) for lbl in df_plot.index]
 
-    # Subplot 1: Heatmap top 15 cidades
-    df_top15 = empresas_top15_cidade.to_frame(name="Quantidade")
-    df_top15.index = ['\n'.join(textwrap.wrap(lbl, 15)) for lbl in df_top15.index]
+    sns.heatmap(df_plot, annot=True, fmt="d", cmap="Blues", cbar=False,
+                annot_kws={"fontsize": 10}, linewidths=0.5, linecolor="lightgray")
 
-    sns.heatmap(df_top15, annot=True, fmt="d", cmap="Blues", cbar=False,
-                annot_kws={"fontsize": 10}, linewidths=0.5, linecolor="lightgray", ax=axes[0])
-    axes[0].set_title("Empresas por cidade", pad=15)
-    axes[0].set_ylabel("")
-    axes[0].set_yticklabels(axes[0].get_yticklabels(), rotation=0, fontsize=10)
+    plt.title("Empresas por Cidade", pad=15, weight='bold')
+    plt.ylabel("")
+    plt.xlabel("")  # Limpeza do eixo X
+    plt.xticks([])  # Limpeza do eixo X
+    plt.show()
 
-    # Subplot 2: Barras verticais com totais
-    valores_totais = [total_empresas, empresas_cidades_distintas]
-    categorias_totais = ['Total de Empresas', 'Cidades Distintas']
-    barras = axes[1].bar(categorias_totais, valores_totais, color=['steelblue', 'darkorange'])
-    axes[1].set_title("Totais Gerais", pad=15)
+
+def grafico_empresas_distintas():
+    df_distintas = df_pipe.loc[
+        (df_pipe['Município'] != 'Não Informado') & (df_pipe['Empresa'] != 'Não Informado')
+        ].groupby('Município')['Empresa'].nunique().sort_values(ascending=False).head(15)
+
+    plt.figure(figsize=(10, 6))
+    df_plot = df_distintas.to_frame(name="")
+    df_plot.index = ['\n'.join(textwrap.wrap(lbl, 15)) for lbl in df_plot.index]
+
+    sns.heatmap(df_plot, annot=True, fmt="d", cmap="YlGnBu", cbar=False,
+                annot_kws={"fontsize": 10}, linewidths=0.5, linecolor="lightgray")
+
+    plt.title("Empresas Únicas por Cidade", pad=15, weight='bold')
+    plt.ylabel("")
+    plt.xlabel("")
+    plt.xticks([])
+    plt.show()
+
+
+def grafico_diferenca_empresa_cidade():
+    df_municipio_ok = df_pipe.loc[df_pipe['Município'] != 'Não Informado']
+
+    total_empresas = df_pipe.loc[df_pipe['Empresa'] != 'Não Informado', 'Empresa'].count()
+    total_empresas_localizadas = df_municipio_ok['Empresa'].count()
+    total_empresas_distintas = df_municipio_ok['Empresa'].nunique()
+    empresas_cidades_distintas = df_municipio_ok['Município'].nunique()
+
+    empresas_exterior = df_pipe.loc[
+        ((df_pipe['Instituições no Exterior'] != 'Não Informado') |
+         (df_pipe['País Instituição (ões) no Exterior'] != 'Brasil') &
+         (df_pipe['País Instituição (ões) no Exterior'] != 'Não Informado')) &
+        (df_pipe['Empresa'] != 'Não Informado'), 'Empresa'
+    ].nunique()
+
+    empresas_cooperacao = df_pipe.loc[
+        (df_pipe['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP'] != 'Brasil') &
+        (df_pipe['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP'] != 'Não Informado') &
+        (df_pipe['Empresa'] != 'Não Informado'), 'Empresa'
+    ].nunique()
+
+    plt.figure(figsize=(14, 7))
+    categorias = [
+        'Total Geral',
+        'Total\nLocalizado',
+        'Empresas\nDistintas',
+        'Cidades\nAtendidas',
+        'Cooperação\nFAPESP Exterior',
+        'Instituição\nno Exterior'
+
+    ]
+    valores = [
+        total_empresas,
+        total_empresas_localizadas,
+        total_empresas_distintas,
+        empresas_cidades_distintas,
+        empresas_cooperacao,
+        empresas_exterior
+
+    ]
+
+    # Cores: Degradê para volume e tons de azul/roxo para internacionalização
+    cores = ['#D35400', '#E67E22', '#2D8E87', '#7D5BA6', '#2980B9', '#1F618D']
+
+    barras = plt.bar(categorias, valores, color=cores, width=0.6)
+    plt.title("Métricas de Abrangência de Empresas, Volume e Internacionalização PIPE", pad=35, fontsize=14, weight='bold')
+
+    # 3. Rótulos de dados
     for barra in barras:
         altura = barra.get_height()
-        axes[1].text(barra.get_x() + barra.get_width() / 2, altura + max(valores_totais) * 0.01,
-                     str(int(altura)), ha='center', va='bottom', fontsize=10)
+        plt.text(barra.get_x() + barra.get_width() / 2, altura + (max(valores) * 0.02),
+                 f'{int(altura)}', ha='center', va='bottom', fontsize=10, weight='bold')
+
+    # 4. Limpeza Visual
+    sns.despine(left=True)
+    plt.yticks([])
+    plt.gca().spines['bottom'].set_color('#CCCCCC')
 
     plt.tight_layout()
     plt.show()
+
 
 def grafico_circular_pesquisas():
     """
@@ -369,4 +437,4 @@ def grafico_localizacao_pesquisas(top_n=10):
     plt.tight_layout(pad=4.0)
     plt.show()
 
-grafico_localizacao_pesquisas()
+grafico_empresas_distintas()

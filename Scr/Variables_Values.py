@@ -125,3 +125,25 @@ resumo_empresa = df_pipe.loc[
 
 #CSV
 resumo_empresa.to_csv("../Export_csv/PIPE/Values/resumo_empresas_e_pesquisas.csv",index=False,encoding="utf-8-sig")
+
+'---------------------------------------------------------------------------------'
+# --- LISTA DE LOCALIZAÇÃO DAS EMPRESAS (SEM REPETIÇÃO POR CIDADE) ---
+
+# 1. Selecionamos apenas as colunas necessárias
+df_localizacao = df_pipe[['Empresa', 'Município']].copy()
+
+# 2. Removemos as linhas onde não há informação
+df_localizacao = df_localizacao[
+    (df_localizacao['Empresa'] != 'Não Informado') &
+    (df_localizacao['Município'] != 'Não Informado')
+]
+
+# 3. O PULO DO GATO: Removemos duplicatas de Empresa + Município
+# Isso garante que a Empresa A só apareça UMA VEZ por Município
+df_localizacao_limpa = df_localizacao.drop_duplicates(subset=['Empresa', 'Município'])
+
+# 4. Ordenamos para facilitar a leitura
+df_localizacao_limpa = df_localizacao_limpa.sort_values(by=['Município', 'Empresa'])
+
+# 5. Exportamos para o seu Explorador ou CSV
+df_localizacao_limpa.to_csv("../Export_csv/PIPE/Values/empresas_por_cidade.csv", index=False, encoding="utf-8-sig")

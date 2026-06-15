@@ -34,7 +34,7 @@ def load_data():
 
 df = load_data()
 
-# --- BARRA LATERAL (FILTROS) ---
+#BARRA LATERAL
 st.sidebar.header("🔍 Filtros Dinâmicos")
 
 
@@ -44,13 +44,13 @@ def get_options(column):
     return ["Todas"] + opts
 
 
-# 1. Grande Área
+#1 Grande Área
 selected_ga = st.sidebar.selectbox("Grande Área do Conhecimento", get_options("Grande Área do Conhecimento"))
 
-# 2. Município (Restaurado)
+#2 Município
 selected_mun = st.sidebar.selectbox("Município", get_options("Município"))
 
-# 3. País Parceiro (Internacional)
+#3 País Parceiro
 p_inst_all = df[~df['País Instituição (ões) no Exterior'].isin(['Brasil', 'Não Informado'])][
     'País Instituição (ões) no Exterior']
 p_acordo_all = df[~df['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP'].isin(['Brasil', 'Não Informado'])][
@@ -58,17 +58,16 @@ p_acordo_all = df[~df['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP
 paises_unicos = sorted(pd.concat([p_inst_all, p_acordo_all]).dropna().unique().tolist())
 selected_pais = st.sidebar.selectbox("País Parceiro (Internacional)", ["Todos"] + paises_unicos)
 
-# 4. Modalidade de Apoio
+#4 Modalidade de Apoio
 selected_mod = st.sidebar.selectbox("Modalidade de Apoio", get_options("Modalidade de apoio"))
 
-# 5. Filtro Temporal (Data de Início) com Seletores Independentes
+#5 Filtro Temporal
 st.sidebar.subheader("📅 Período de Início")
 min_date_orig = df['Data de Início'].min()
 max_date_orig = df['Data de Início'].max()
 if pd.isnull(min_date_orig) or pd.isnull(max_date_orig):
     min_date_orig, max_date_orig = datetime(2000, 1, 1), datetime(2026, 12, 31)
 
-# Lógica de Reset robusta usando session_state
 if 'date_reset_counter' not in st.session_state:
     st.session_state.date_reset_counter = 0
 
@@ -77,7 +76,6 @@ def reset_dates():
     st.session_state.date_reset_counter += 1
 
 
-# Seletores independentes para maior versatilidade
 col_d1, col_d2 = st.sidebar.columns(2)
 with col_d1:
     start_date = st.date_input(
@@ -98,7 +96,7 @@ with col_d2:
 
 st.sidebar.button("Resetar Datas", on_click=reset_dates)
 
-# Aplicação dos Filtros
+#Aplicação
 df_f = df.copy()
 
 if selected_ga != "Todas":
@@ -115,15 +113,14 @@ if selected_pais != "Todos":
 if selected_mod != "Todas":
     df_f = df_f[df_f["Modalidade de apoio"] == selected_mod]
 
-# Filtro de data usando os seletores independentes
 df_f = df_f[
     (df_f['Data de Início'] >= pd.to_datetime(start_date)) & (df_f['Data de Início'] <= pd.to_datetime(end_date))]
 
-# --- CABEÇALHO ---
+#CABEÇALHO
 st.title("📊 Análise Quantitativa FAPESP PIPE 2026")
 st.markdown("---")
 
-# --- MÉTRICAS ---
+#MÉTRICAS
 c1, c2, c3, c4 = st.columns(4)
 total_p = len(df_f[df_f['Título (Português)'] != 'Não Informado'])
 total_e = df_f[df_f['Empresa'] != 'Não Informado']['Empresa'].nunique()
@@ -142,7 +139,7 @@ def count_unique_pesq(df, columns):
     return pd.Series(names_list).nunique()
 
 
-# Variáveis de pesquisadores atualizadas
+#Variáveis de pesquisadores atualizadas
 total_pesq = count_unique_pesq(df_f, [
     'Pesquisador Responsável',
     'Pesquisadores Principais (Atuais)',
@@ -159,7 +156,7 @@ c4.metric("Municípios Atendidos", df_f[df_f['Município'] != 'Não Informado'][
 
 st.markdown("---")
 
-# --- LINHA 1: RANKINGS (MUNICÍPIOS E PAÍSES) ---
+# Ranking
 col1, col2 = st.columns(2)
 
 with col1:
@@ -188,7 +185,7 @@ with col2:
     else:
         st.info("Nenhum dado internacional para os filtros selecionados.")
 
-# --- LINHA 1.5: DISTRIBUIÇÃO GEOGRÁFICA ---
+# grafico Geografico
 st.markdown("---")
 st.subheader("🗺️ Distribuição Geográfica")
 
@@ -203,7 +200,7 @@ with ctrl2_geo:
     nivel_geo = st.radio("Escolha o nível geográfico:", ["Municípios", "Países", "Países e Municípios"],
                          horizontal=True, key="nivel_geo")
 
-# Preparação dos dados Geográficos
+
 df_paises_series = pd.concat([
     df_f[~df_f['País Instituição (ões) no Exterior'].isin(['Brasil', 'Não Informado'])][
         'País Instituição (ões) no Exterior'],
@@ -219,7 +216,7 @@ if nivel_geo == "Municípios":
 elif nivel_geo == "Países":
     dist_data_geo = dist_paises
     color_geo = '#d62728'
-else:  # Países e Municípios
+else:
     dist_data_geo = pd.concat([dist_paises, dist_municipios])
     dist_data_geo = dist_data_geo.groupby(dist_data_geo.index).sum().sort_values(ascending=False)
 
@@ -282,7 +279,7 @@ else:
             fig_geo = go.Figure()
 st.plotly_chart(fig_geo, use_container_width=True)
 
-# --- LINHA 2: DISTRIBUIÇÃO Por Áreas De Conhecimento ---
+# grafico Áreas De Conhecimento
 st.markdown("---")
 st.subheader("🏢 Distribuição por Áreas do Conhecimento")
 ctrl1, ctrl2 = st.columns([1, 2])
@@ -334,7 +331,7 @@ else:
         fig_dist = go.Figure()
 st.plotly_chart(fig_dist, use_container_width=True)
 
-# --- LINHA 3: Distribuição por Pesquisadores ---
+# grafico Pesquisadores
 st.markdown("---")
 st.subheader("👥 Distribuição por Pesquisadores")
 
@@ -435,7 +432,7 @@ else:
         fig_p = go.Figure()
 st.plotly_chart(fig_p, use_container_width=True)
 
-# --- TABELA DE DADOS DINÂMICA ---
+# database tabela
 st.markdown("---")
 st.subheader("🔍 Explorador de Dados Dinâmico")
 if st.checkbox("Ativar Explorador de Tabela", value=True):

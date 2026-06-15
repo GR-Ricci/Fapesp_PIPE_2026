@@ -1,20 +1,15 @@
 from Path import pipe_path
-import pandas as pd
 import io
-import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import os
 
-#Tratamento de Erro
+#Tratamento de Erros
 with open(pipe_path, 'r', encoding='utf-8-sig') as pipe:
     lines = pipe.readlines()
 
 if not lines[0].strip().endswith(';'):
     lines[0] = lines[0].rstrip() + ';\n'
 
-lines = [v for v in lines if ';' in v] #erro da linha final - metadados
+lines = [v for v in lines if ';' in v]
 
 #Config Pandas
 df_pipe_base = pd.read_csv(io.StringIO(''.join(lines)), sep=';')
@@ -50,21 +45,23 @@ df_pipe = df_pipe.astype(object)
 #CSV
 df_pipe.to_csv("../Export_csv/DataBase/PIPE_database_completo.csv", index=False, encoding="utf-8-sig")
 
-#---------------Feature Nova-----------------------#
+#Feature Nova
 df_pipe['Título'] = df_pipe['Título (Português)'].replace(['Não Informado', '', ' ', None],pd.NA).fillna(df_pipe['Título (Inglês)'])
+
+
+
+#Explicações sobre feature e tratamento de erros
+
 
 #Explicação feature nova
 """
 Alguns dados de título tem apenas a versão em ingles, para isso criei uma feature que prioriza o titulo em portugues
 mas que para não mostrar uma pesquisa com dado null, mostre o titulo em ingles caso seja a ultma opcao
-
 exceto em casos de pesquisas no exterior, onde é viavel mostrar o titulo originalmente em ingles
 """
 
-
 #Explicação erros index
 """
-
 Processo de index do CSV
 o Arquivo estava deslocando os valores para a direita, não mostrando o dado real de sua feature
 
@@ -91,7 +88,6 @@ então criei no codigo um verificador, caso algo seja mudado no csv e o mesmo ac
 mas caso o ; não exista, ele é adicionado, e assim todos os valores passam a pertencer corretmente a seu feature
 
 """
-
 #Explicação erro linha final
 """
 

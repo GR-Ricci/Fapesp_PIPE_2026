@@ -211,13 +211,19 @@ auxilio_empresas_distintas.to_csv("../Export_csv/PIPE/Counts/apoio_geral_empresa
 
 #Quantidade Empresas
 
-# Totais originais
-empresas_por_cidade = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Município'].value_counts()
-total_empresas = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Empresa'].count()
+# --- AJUSTE DE TOTAIS E MÉTRICAS ---
+
+# 1. Total Absoluto de Projetos (Sem filtro de município, apenas garante que a empresa exista)
+total_empresas = df_pipe.loc[df_pipe['Empresa'] != 'Não Informado', 'Empresa'].count()
+
+# 2. Total de Projetos Localizados (Apenas onde o município foi informado)
+total_empresas_localizadas = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Empresa'].count()
+
+# 3. Outras métricas (Mantendo sua lógica de município informado)
 total_empresas_distintas = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Empresa'].nunique()
 empresas_cidades_distintas = df_pipe.loc[df_pipe['Município'] != 'Não Informado', 'Município'].nunique()
 
-# Empresas com institution no exterior (Instituições no Exterior ou País Instituição)
+# --- MÉTRICAS DE EXTERIOR (Mantendo sua lógica original) ---
 empresas_exterior = df_pipe.loc[
     ((df_pipe['Instituições no Exterior'] != 'Não Informado') |
      (df_pipe['País Instituição (ões) no Exterior'] != 'Brasil') &
@@ -225,38 +231,49 @@ empresas_exterior = df_pipe.loc[
     (df_pipe['Empresa'] != 'Não Informado'), 'Empresa'
 ].nunique()
 
-# Empresas com acordo/convênio exterior
 empresas_cooperacao = df_pipe.loc[
     (df_pipe['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP'] != 'Brasil') &
     (df_pipe['País Acordo(s)/Convênio(s) de Cooperação com a FAPESP'] != 'Não Informado') &
     (df_pipe['Empresa'] != 'Não Informado'), 'Empresa'
 ].nunique()
 
-# CSV: cidades e empresas
-empresas_por_cidade_csv = df_pipe.loc[df_pipe['Município'] != 'Não Informado'].groupby('Município').size()
-empresas_por_cidade_df = empresas_por_cidade_csv.reset_index()
-empresas_por_cidade_df.columns = ['Município', 'Quantidade de Empresas']
-empresas_por_cidade_df = empresas_por_cidade_df.sort_values(by="Quantidade de Empresas", ascending=False)
-empresas_por_cidade_df.to_csv("../Export_csv/PIPE/Counts/cidades_e_empresas.csv", index=False, encoding="utf-8-sig")
-
-# CSV: totais (incluindo as novas métricas)
+# --- ATUALIZAÇÃO DO CSV DE TOTAIS ---
 dados_metricas = {
     "Empresas": [
         "Total de Empresas",
+        "Total de Empresas Localizados",
         "Total de Empresas Distintas",
         "Total de Empresas em Cidades Distintas",
         "Empresas com Cooperação no Exterior",
-    "Empresas com Instituição no Exterior"],
+        "Empresas com Instituição no Exterior"
+    ],
     "Quantidade": [
         total_empresas,
+        total_empresas_localizadas,
         total_empresas_distintas,
         empresas_cidades_distintas,
         empresas_cooperacao,
-        empresas_exterior]
+        empresas_exterior
+    ]
 }
 
 metricas_cidade_df = pd.DataFrame(dados_metricas)
 metricas_cidade_df.to_csv("../Export_csv/PIPE/Counts/quantidade_empresa.csv", index=False, encoding="utf-8-sig")
+
+
+empresas_distintas_por_municipio = df_pipe.loc[
+    (df_pipe['Município'] != 'Não Informado') & (df_pipe['Empresa'] != 'Não Informado')
+].groupby('Município')['Empresa'].nunique().reset_index()
+
+# Renomeia as colunas para o padrão desejado
+empresas_distintas_por_municipio.columns = ['Município', 'Quantidade de Empresas Distintas']
+
+# Ordena do maior para o menor
+empresas_distintas_por_municipio = empresas_distintas_por_municipio.sort_values(by="Quantidade de Empresas Distintas", ascending=False)
+
+# Exporta o CSV
+empresas_distintas_por_municipio.to_csv("../Export_csv/PIPE/Counts/empresas_distintas_por_municipio.csv", index=False, encoding="utf-8-sig")
+
 
 '-------------------------------------------------------------'
 #Paises e Municipios com Mais Pesquisas

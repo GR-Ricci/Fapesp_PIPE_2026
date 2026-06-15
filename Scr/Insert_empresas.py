@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 
-# --- Configuração de Caminhos ---
 caminho_csv_entrada = r"C:\T.I\Python\Projetos\DataBase\Fapesp_PIPE_2026\Export_csv\DataBase\PIPE_database_completo.csv"
 pasta_saida = "../Export_csv/Insert"
 nome_arquivo = "Insert_PIPE_2026_empresas.sql"
